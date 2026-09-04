@@ -978,30 +978,36 @@ function formatDate(v) {
   );
 
 }
-
-
 /* =========================
    CREATE ORDER
 ========================= */
 
-function createOrder() {
+async function createOrder() {
 
   const total =
     state.service.prices[state.package]
     * state.qty;
 
 
+  /* =========================
+     BUAT NOMOR INVOICE
+  ========================= */
+
   const inv =
     "INV-" +
     new Date()
       .toISOString()
-      .slice(0,10)
+      .slice(0, 10)
       .replaceAll("-", "") +
     "-" +
     String(
       getOrders().length + 1
     ).padStart(3, "0");
 
+
+  /* =========================
+     DATA PESANAN
+  ========================= */
 
   const order = {
 
@@ -1022,7 +1028,8 @@ function createOrder() {
     qty:
       state.qty,
 
-    total,
+    total:
+      total,
 
     date:
       state.date,
@@ -1040,46 +1047,123 @@ function createOrder() {
       state.address,
 
     status:
-      "Menunggu Konfirmasi",
-
-    createdAt:
-      new Date().toISOString()
+      "Menunggu",
 
   };
 
 
-  const orders =
-    getOrders();
-
-
-  orders.unshift(order);
-
-  saveOrders(orders);
-
-
-  localStorage.setItem(
-    "shae_profile",
-    JSON.stringify({
-      name: state.name,
-      phone: state.phone
-    })
-  );
-
-
-  closeOrder();
-
-  renderOrders();
-
-  renderInvoice();
-
-  showPage("pesanan");
+  /* =========================
+     TAMPILKAN LOADING
+  ========================= */
 
   showToast(
-    "Pesanan berhasil dibuat"
+    "Mengirim pesanan..."
   );
 
-}
 
+  try {
+
+    /* =========================
+       SIMPAN KE FIREBASE
+    ========================= */
+
+    const firebaseId =
+      await simpanOrder(order);
+
+
+    /* =========================
+       SIMPAN ID FIREBASE
+       KE DATA LOCAL
+    ========================= */
+
+    const localOrder = {
+
+      ...order,
+
+      firebaseId:
+
+        firebaseId,
+
+      createdAt:
+
+        new Date().toISOString()
+
+    };
+
+
+    const orders =
+      getOrders();
+
+
+    orders.unshift(
+      localOrder
+    );
+
+
+    saveOrders(
+      orders
+    );
+
+
+    /* =========================
+       SIMPAN PROFILE
+    ========================= */
+
+    localStorage.setItem(
+      "shae_profile",
+
+      JSON.stringify({
+
+        name:
+          state.name,
+
+        phone:
+          state.phone
+
+      })
+    );
+
+
+    /* =========================
+       TUTUP MODAL
+    ========================= */
+
+    closeOrder();
+
+
+    /* =========================
+       REFRESH HALAMAN
+    ========================= */
+
+    renderOrders();
+
+    renderInvoice();
+
+    showPage(
+      "pesanan"
+    );
+
+
+    showToast(
+      "Pesanan berhasil dibuat"
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      "Gagal menyimpan pesanan:",
+      error
+    );
+
+
+    showToast(
+      "Pesanan gagal dikirim. Coba lagi."
+    );
+
+  }
+
+}
 
 /* =========================
    RENDER PESANAN
