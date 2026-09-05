@@ -1,22 +1,458 @@
-import { auth, db, onAuthStateChanged, signInWithEmailAndPassword, signOut, collection, query, orderBy, onSnapshot, doc, updateDoc, serverTimestamp } from './firebase.js';
+import {
+  auth,
+  db,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut,
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+  doc,
+  updateDoc,
+  serverTimestamp
+} from "./firebase.js";
 
-const $=id=>document.getElementById(id);
-let allOrders=[]; let unsubscribe=null;
+const $ = (id) => document.getElementById(id);
 
-function showError(text){$('errorBox').textContent=text;$('errorBox').hidden=false;}
-function clearError(){$('errorBox').hidden=true;}
-function rupiah(n){return new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n)||0)}
-function dateText(v){if(!v)return '-';try{return new Date(v+'T00:00:00').toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})}catch{return v}}
+let allOrders = [];
+let unsubscribe = null;
 
-$('loginBtn').onclick=async()=>{const email=$('email').value.trim(),pass=$('password').value;if(!email||!pass){$('loginMsg').textContent='Email dan password wajib diisi.';return} $('loginBtn').disabled=true;$('loginMsg').textContent='Memproses...';try{await signInWithEmailAndPassword(auth,email,pass);$('loginMsg').textContent=''}catch(e){$('loginMsg').textContent='Login gagal: '+(e.code||e.message)}finally{$('loginBtn').disabled=false}};
-$('logoutBtn').onclick=()=>signOut(auth);
-$('filterStatus').onchange=renderOrders;
 
-onAuthStateChanged(auth,user=>{if(user){$('loginBox').hidden=true;$('panel').hidden=false;startOrders()}else{$('loginBox').hidden=false;$('panel').hidden=true;if(unsubscribe){unsubscribe();unsubscribe=null}}});
+/* =========================
+   HELPER
+========================= */
 
-function startOrders(){clearError();$('orders').innerHTML='<div class="loading">Menghubungkan ke Firebase...</div>';const q=query(collection(db,'orders'),orderBy('createdAt','desc'));unsubscribe=onSnapshot(q,snap=>{allOrders=snap.docs.map(d=>({id:d.id,...d.data()}));renderOrders()},err=>{showError('Firebase menolak akses ke orders: '+err.message);$('orders').innerHTML='<div class="empty">Tidak dapat membaca pesanan.</div>'})}
+function showError(text) {
+  const box = $("errorBox");
 
-function renderOrders(){const filter=$('filterStatus').value;const orders=allOrders.filter(o=>!filter||o.status===filter);$('totalOrders').textContent=allOrders.length;$('waitingOrders').textContent=allOrders.filter(o=>o.status==='Menunggu'||o.status==='Menunggu Konfirmasi').length;$('confirmedOrders').textContent=allOrders.filter(o=>o.status==='Dikonfirmasi').length;$('doneOrders').textContent=allOrders.filter(o=>o.status==='Selesai').length;if(!orders.length){$('orders').innerHTML='<div class="empty">Belum ada pesanan.</div>';return}$('orders').innerHTML=orders.map(o=>`<article class="invoice-card"><div class="top"><div><b>${o.service||o.layanan||'Layanan'}</b><div class="muted">${o.invoice||o.id}</div></div><span class="status">${o.status||'Menunggu'}</span></div><div class="line"><span>Pelanggan</span><b>${o.name||o.nama||'-'}</b></div><div class="line"><span>WhatsApp</span><b>${o.phone||o.hp||'-'}</b></div><div class="line"><span>Jadwal</span><b>${dateText(o.date||o.tanggal)} ${o.time||o.jam||''}</b></div><div class="line"><span>Total</span><b>${rupiah(o.total)}</b></div><div class="actions"><button onclick="ubahStatus('${o.id}','Dikonfirmasi')">Konfirmasi</button><button onclick="ubahStatus('${o.id}','Diproses')">Proses</button><button onclick="ubahStatus('${o.id}','Selesai')">Selesai</button><button class="wa" onclick="wa('${(o.phone||o.hp||'').replace(/\D/g,'')}','${o.invoice||o.id}')">WhatsApp</button></div></article>`).join('')}
+  if (box) {
+    box.textContent = text;
+    box.hidden = false;
+  }
+}
 
-window.ubahStatus=async(id,status)=>{try{await updateDoc(doc(db,'orders',id),{status,updatedAt:serverTimestamp()})}catch(e){showError('Gagal mengubah status: '+e.message)}};
-window.wa=(phone,inv)=>{if(!phone)return;phone=phone.startsWith('0')?'62'+phone.slice(1):phone;window.open('https://wa.me/'+phone+'?text='+encodeURIComponent('Halo, kami dari Shae Cleaners. Terkait pesanan '+inv+'.'),'_blank')};
+function clearError() {
+  const box = $("errorBox");
+
+  if (box) {
+    box.hidden = true;
+  }
+}
+
+function rupiah(n) {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0
+  }).format(Number(n) || 0);
+}
+
+function dateText(v) {
+  if (!v) return "-";
+
+  try {
+    return new Date(v + "T00:00:00").toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric"
+    });
+  } catch {
+    return v;
+  }
+}
+
+
+/* =========================
+   LOGIN
+========================= */
+
+const loginBtn = $("loginBtn");
+
+if (loginBtn) {
+
+  loginBtn.addEventListener("click", async function () {
+
+    const email = $("email").value.trim();
+    const password = $("password").value;
+    const msg = $("loginMsg");
+
+    clearError();
+
+    if (!email || !password) {
+      msg.textContent = "Email dan password wajib diisi.";
+      return;
+    }
+
+    loginBtn.disabled = true;
+    loginBtn.textContent = "Memproses...";
+    msg.textContent = "";
+
+    try {
+
+      await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+      msg.textContent = "Login berhasil...";
+
+    } catch (error) {
+
+      console.error("LOGIN ERROR:", error);
+
+      let pesan = "Login gagal.";
+
+      switch (error.code) {
+
+        case "auth/invalid-credential":
+          pesan = "Email atau password salah.";
+          break;
+
+        case "auth/user-not-found":
+          pesan = "Akun admin tidak ditemukan.";
+          break;
+
+        case "auth/wrong-password":
+          pesan = "Password salah.";
+          break;
+
+        case "auth/invalid-email":
+          pesan = "Format email tidak valid.";
+          break;
+
+        case "auth/too-many-requests":
+          pesan = "Terlalu banyak percobaan. Coba lagi beberapa saat.";
+          break;
+
+        case "auth/network-request-failed":
+          pesan = "Tidak ada koneksi internet.";
+          break;
+
+        default:
+          pesan = "Login gagal: " + error.message;
+      }
+
+      msg.textContent = pesan;
+
+    } finally {
+
+      loginBtn.disabled = false;
+      loginBtn.textContent = "Login Admin";
+    }
+
+  });
+
+}
+
+
+/* =========================
+   ENTER = LOGIN
+========================= */
+
+$("password")?.addEventListener("keydown", function (e) {
+
+  if (e.key === "Enter") {
+    e.preventDefault();
+    loginBtn?.click();
+  }
+
+});
+
+
+/* =========================
+   LOGOUT
+========================= */
+
+$("logoutBtn")?.addEventListener("click", function () {
+  signOut(auth);
+});
+
+
+/* =========================
+   FILTER
+========================= */
+
+$("filterStatus")?.addEventListener("change", renderOrders);
+
+
+/* =========================
+   AUTH CHECK
+========================= */
+
+onAuthStateChanged(auth, (user) => {
+
+  if (user) {
+
+    console.log("Admin login:", user.email);
+
+    $("loginBox").hidden = true;
+    $("panel").hidden = false;
+
+    startOrders();
+
+  } else {
+
+    console.log("Belum login.");
+
+    $("loginBox").hidden = false;
+    $("panel").hidden = true;
+
+    if (unsubscribe) {
+      unsubscribe();
+      unsubscribe = null;
+    }
+
+  }
+
+});
+
+
+/* =========================
+   FIRESTORE ORDERS
+========================= */
+
+function startOrders() {
+
+  clearError();
+
+  $("orders").innerHTML =
+    '<div class="loading">Menghubungkan ke Firebase...</div>';
+
+  try {
+
+    const q = query(
+      collection(db, "orders"),
+      orderBy("createdAt", "desc")
+    );
+
+    unsubscribe = onSnapshot(
+      q,
+
+      (snap) => {
+
+        allOrders = snap.docs.map((d) => ({
+          id: d.id,
+          ...d.data()
+        }));
+
+        renderOrders();
+      },
+
+      (err) => {
+
+        console.error("FIRESTORE ERROR:", err);
+
+        showError(
+          "Firebase menolak akses ke orders: " +
+          err.message
+        );
+
+        $("orders").innerHTML =
+          '<div class="empty">Tidak dapat membaca pesanan.</div>';
+      }
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+    showError(error.message);
+  }
+}
+
+
+/* =========================
+   RENDER ORDERS
+========================= */
+
+function renderOrders() {
+
+  const filter = $("filterStatus").value;
+
+  const orders = allOrders.filter(
+    (o) => !filter || o.status === filter
+  );
+
+  $("totalOrders").textContent =
+    allOrders.length;
+
+  $("waitingOrders").textContent =
+    allOrders.filter(
+      (o) =>
+        o.status === "Menunggu" ||
+        o.status === "Menunggu Konfirmasi"
+    ).length;
+
+  $("confirmedOrders").textContent =
+    allOrders.filter(
+      (o) => o.status === "Dikonfirmasi"
+    ).length;
+
+  $("doneOrders").textContent =
+    allOrders.filter(
+      (o) => o.status === "Selesai"
+    ).length;
+
+
+  if (!orders.length) {
+
+    $("orders").innerHTML =
+      '<div class="empty">Belum ada pesanan.</div>';
+
+    return;
+  }
+
+
+  $("orders").innerHTML = orders.map((o) => {
+
+    const phone =
+      o.phone ||
+      o.hp ||
+      "";
+
+    const invoice =
+      o.invoice ||
+      o.id;
+
+    return `
+
+      <article class="invoice-card">
+
+        <div class="top">
+
+          <div>
+            <b>
+              ${o.service || o.layanan || "Layanan"}
+            </b>
+
+            <div class="muted">
+              ${invoice}
+            </div>
+          </div>
+
+          <span class="status">
+            ${o.status || "Menunggu"}
+          </span>
+
+        </div>
+
+
+        <div class="line">
+          <span>Pelanggan</span>
+          <b>${o.name || o.nama || "-"}</b>
+        </div>
+
+
+        <div class="line">
+          <span>WhatsApp</span>
+          <b>${phone || "-"}</b>
+        </div>
+
+
+        <div class="line">
+          <span>Jadwal</span>
+          <b>
+            ${dateText(o.date || o.tanggal)}
+            ${o.time || o.jam || ""}
+          </b>
+        </div>
+
+
+        <div class="line">
+          <span>Total</span>
+          <b>${rupiah(o.total)}</b>
+        </div>
+
+
+        <div class="actions">
+
+          <button
+            onclick="ubahStatus('${o.id}','Dikonfirmasi')">
+            Konfirmasi
+          </button>
+
+          <button
+            onclick="ubahStatus('${o.id}','Diproses')">
+            Proses
+          </button>
+
+          <button
+            onclick="ubahStatus('${o.id}','Selesai')">
+            Selesai
+          </button>
+
+          <button
+            class="wa"
+            onclick="wa('${phone.replace(/\D/g, "")}','${invoice}')">
+            WhatsApp
+          </button>
+
+        </div>
+
+      </article>
+
+    `;
+
+  }).join("");
+}
+
+
+/* =========================
+   UPDATE STATUS
+========================= */
+
+window.ubahStatus = async function (id, status) {
+
+  try {
+
+    await updateDoc(
+      doc(db, "orders", id),
+      {
+        status: status,
+        updatedAt: serverTimestamp()
+      }
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+    showError(
+      "Gagal mengubah status: " +
+      error.message
+    );
+  }
+};
+
+
+/* =========================
+   WHATSAPP
+========================= */
+
+window.wa = function (phone, invoice) {
+
+  if (!phone) {
+    alert("Nomor WhatsApp pelanggan tidak tersedia.");
+    return;
+  }
+
+  if (phone.startsWith("0")) {
+    phone = "62" + phone.slice(1);
+  }
+
+  const text =
+    "Halo, kami dari Shae Cleaners. " +
+    "Terkait pesanan " +
+    invoice +
+    ".";
+
+  window.open(
+    "https://wa.me/" +
+    phone +
+    "?text=" +
+    encodeURIComponent(text),
+    "_blank"
+  );
+};
