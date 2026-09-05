@@ -1728,3 +1728,22 @@ if (document.readyState !== "loading") {
   startSlider();
 
 }
+
+/* =====================================================
+   GLOBAL FUNCTION
+   Karena app.js menggunakan type="module"
+   ===================================================== */
+
+window.startOrder = startOrder;
+window.closeOrder = closeOrder;
+window.selectPackage = selectPackage;
+window.nextStep = nextStep;
+window.prevStep = prevStep;
+window.showPage = showPage;
+window.filterServices = filterServices;
+window.openWhatsApp = openWhatsApp;
+window.viewInvoice = viewInvoice;
+window.editProfile = editProfile;
+window.goSlide = goSlide;
+window.nextSlide = nextSlide;
+window.prevSlide = prevSlide;
