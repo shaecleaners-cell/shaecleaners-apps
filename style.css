@@ -200,7 +200,7 @@ padding-bottom:88px}
  background:linear-gradient(145deg,#0f9f48,#38d16b);
  display:grid;place-items:center;color:#fff;font-weight:900;
  font-size:18px;box-shadow:0 5px 14px #16a34a35}
-.brand h1{font-size:23px;margin:0 0 3px}
+.brand h1{color:#1b2fe3;font-size:23px;margin:0 0 3px}
 .brand h1 span{color:var(--green)}
 .brand p{margin:0;color:#6e7782;font-size:14px}
 
