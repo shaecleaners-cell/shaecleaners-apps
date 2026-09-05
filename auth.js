@@ -1,72 +1,93 @@
-// =====================================================
-// SHAE CLEANERS - AUTH.JS
-// LOGIN & REGISTER
-// =====================================================
+import {
+  initializeApp
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 
 import {
-  auth,
-  db,
+  getAuth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  updateProfile,
+  updateProfile
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
+import {
+  getFirestore,
   doc,
   setDoc
-} from "./firebase.js";
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAQRKEMFceCbJRGgPfr3Vtt-AdbE38pwVg",
+  authDomain: "shaecleaners-f6ed8.firebaseapp.com",
+  projectId: "shaecleaners-f6ed8",
+  storageBucket: "shaecleaners-f6ed8.firebasestorage.app",
+  messagingSenderId: "839960858623",
+  appId: "1:839960858623:web:1aa97b91f54924cd10e1ca"
+};
+
+
+const app = initializeApp(firebaseConfig);
+
+const auth = getAuth(app);
+const db = getFirestore(app);
 
 const msg = document.getElementById("msg");
 
-function errorMessage(e) {
 
-  const errors = {
+function tampilError(error) {
+
+  console.error(error);
+
+  const pesan = {
     "auth/email-already-in-use":
       "Email sudah terdaftar.",
-
-    "auth/invalid-credential":
-      "Email atau password salah.",
-
-    "auth/weak-password":
-      "Password minimal 6 karakter.",
 
     "auth/invalid-email":
       "Format email tidak valid.",
 
-    "auth/network-request-failed":
-      "Periksa koneksi internet.",
+    "auth/weak-password":
+      "Password minimal 6 karakter.",
 
-    "auth/configuration-not-found":
-      "Firebase Authentication belum diaktifkan. Silakan aktifkan Email/Password di Firebase Console.",
+    "auth/invalid-credential":
+      "Email atau password salah.",
 
     "auth/operation-not-allowed":
       "Login Email/Password belum diaktifkan di Firebase.",
 
-    "auth/too-many-requests":
-      "Terlalu banyak percobaan. Coba lagi beberapa saat."
+    "auth/configuration-not-found":
+      "Firebase Authentication belum dikonfigurasi.",
+
+    "auth/network-request-failed":
+      "Koneksi internet bermasalah."
   };
 
-  return errors[e.code] || e.message || "Terjadi kesalahan.";
+  msg.textContent =
+    pesan[error.code] ||
+    "Terjadi kesalahan: " + error.message;
 }
 
 
-// =====================================================
+// ===============================
 // REGISTER
-// =====================================================
+// ===============================
 
-const registerForm = document.getElementById("registerForm");
+const registerForm =
+  document.getElementById("registerForm");
 
 if (registerForm) {
 
-  registerForm.onsubmit = async (e) => {
+  registerForm.addEventListener("submit", async function(e) {
 
     e.preventDefault();
 
-    msg.textContent = "Mendaftarkan...";
+    msg.textContent = "Mendaftarkan akun...";
 
     try {
 
-      const name =
+      const nama =
         document.getElementById("name").value.trim();
 
-      const phone =
+      const hp =
         document.getElementById("phone").value.trim();
 
       const email =
@@ -76,8 +97,17 @@ if (registerForm) {
         document.getElementById("password").value;
 
 
+      if (!nama || !hp || !email || !password) {
+
+        msg.textContent =
+          "Semua data wajib diisi.";
+
+        return;
+      }
+
+
       // Buat akun Firebase
-      const credential =
+      const userCredential =
         await createUserWithEmailAndPassword(
           auth,
           email,
@@ -85,22 +115,26 @@ if (registerForm) {
         );
 
 
-      // Simpan nama ke Firebase Auth
+      // Simpan nama ke Authentication
       await updateProfile(
-        credential.user,
+        userCredential.user,
         {
-          displayName: name
+          displayName: nama
         }
       );
 
 
-      // Simpan data pelanggan ke Firestore
+      // Simpan data pelanggan
       await setDoc(
-        doc(db, "customers", credential.user.uid),
+        doc(
+          db,
+          "customers",
+          userCredential.user.uid
+        ),
         {
-          uid: credential.user.uid,
-          nama: name,
-          hp: phone,
+          uid: userCredential.user.uid,
+          nama: nama,
+          hp: hp,
           email: email,
           createdAt: new Date()
         }
@@ -108,36 +142,37 @@ if (registerForm) {
 
 
       msg.textContent =
-        "Pendaftaran berhasil. Membuka aplikasi...";
+        "✓ Akun berhasil dibuat. Membuka aplikasi...";
 
 
       setTimeout(() => {
-        location.href = "index.html";
-      }, 500);
+
+        window.location.href = "index.html";
+
+      }, 800);
 
 
     } catch (error) {
 
-      console.error("REGISTER ERROR:", error);
+      tampilError(error);
 
-      msg.textContent =
-        errorMessage(error);
     }
 
-  };
+  });
 
 }
 
 
-// =====================================================
+// ===============================
 // LOGIN
-// =====================================================
+// ===============================
 
-const loginForm = document.getElementById("loginForm");
+const loginForm =
+  document.getElementById("loginForm");
 
 if (loginForm) {
 
-  loginForm.onsubmit = async (e) => {
+  loginForm.addEventListener("submit", async function(e) {
 
     e.preventDefault();
 
@@ -160,22 +195,22 @@ if (loginForm) {
 
 
       msg.textContent =
-        "Login berhasil...";
+        "✓ Login berhasil...";
 
 
       setTimeout(() => {
-        location.href = "index.html";
+
+        window.location.href = "index.html";
+
       }, 500);
 
 
     } catch (error) {
 
-      console.error("LOGIN ERROR:", error);
+      tampilError(error);
 
-      msg.textContent =
-        errorMessage(error);
     }
 
-  };
+  });
 
 }
