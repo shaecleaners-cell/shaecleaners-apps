@@ -144,10 +144,22 @@ window.pantauOrders = pantauOrders;
 // ==========================================
 
 export {
+  simpanOrder,
+  ubahStatusOrder,
+  pantauOrders,
+
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+  doc,
+  updateDoc,
+  serverTimestamp,
+
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
-  simpanOrder,
-  ubahStatusOrder,
-  pantauOrders
+  createUserWithEmailAndPassword,
+  updateProfile,
+  setDoc
 };
