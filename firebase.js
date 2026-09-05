@@ -2,6 +2,7 @@
 // GANTI bagian firebaseConfig dengan konfigurasi project Firebase Anda.
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js';
 import {
   getFirestore,
   collection,
