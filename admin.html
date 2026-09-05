@@ -1,135 +1,29 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <meta name="theme-color" content="#00A86B">
-
-  <title>Admin - Shae Cleaners</title>
-
-  <link rel="stylesheet" href="admin.css">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#16a34a"><title>Admin - Shae Cleaners</title>
+<link rel="stylesheet" href="admin.css">
 </head>
-
 <body>
-
-  <header class="admin-header">
-    <div>
-      <h2>Shae Cleaners</h2>
-      <span>Panel Admin</span>
-    </div>
-
-    <button id="logoutBtn" class="logout-btn">
-      Keluar
-    </button>
-  </header>
-
-
-  <main class="container">
-
-    <!-- STATISTIK -->
-
-    <section class="stats">
-
-      <div class="stat-card">
-        <div class="stat-icon">🔔</div>
-        <div>
-          <small>Pesanan Baru</small>
-          <strong id="jumlahBaru">0</strong>
-        </div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-icon">🧹</div>
-        <div>
-          <small>Diproses</small>
-          <strong id="jumlahProses">0</strong>
-        </div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-icon">✅</div>
-        <div>
-          <small>Selesai</small>
-          <strong id="jumlahSelesai">0</strong>
-        </div>
-      </div>
-
-    </section>
-
-
-    <!-- FILTER -->
-
-    <section class="filter-box">
-
-      <button class="filter active" data-status="semua">
-        Semua
-      </button>
-
-      <button class="filter" data-status="Menunggu">
-        Baru
-      </button>
-
-      <button class="filter" data-status="Diproses">
-        Diproses
-      </button>
-
-      <button class="filter" data-status="Selesai">
-        Selesai
-      </button>
-
-      <button class="filter" data-status="Dibatalkan">
-        Batal
-      </button>
-
-    </section>
-
-
-    <!-- PESANAN -->
-
-    <section>
-
-      <div class="section-title">
-        <h3>Pesanan Masuk</h3>
-
-        <span id="indikator">
-          ● Realtime
-        </span>
-      </div>
-
-      <div id="orderList">
-
-        <div class="loading">
-          Memuat pesanan...
-        </div>
-
-      </div>
-
-    </section>
-
-  </main>
-
-
-  <!-- MODAL DETAIL -->
-
-  <div id="detailModal" class="modal">
-
-    <div class="modal-box">
-
-      <button class="close-modal" id="closeModal">
-        ×
-      </button>
-
-      <h3>Detail Pesanan</h3>
-
-      <div id="detailOrder"></div>
-
-    </div>
-
+<div class="app">
+  <div id="loginBox" class="card">
+    <div class="logo">SC</div><h1>Admin Shae Cleaners</h1><p>Login untuk membuka pesanan pelanggan.</p>
+    <input id="email" type="email" placeholder="Email admin" autocomplete="username">
+    <input id="password" type="password" placeholder="Password" autocomplete="current-password">
+    <button id="loginBtn">Login Admin</button><div id="loginMsg" class="msg"></div>
   </div>
 
-
-  <script type="module" src="admin.js"></script>
-
-</body>
-</html>
+  <main id="panel" hidden>
+    <header><div><h1>Shae <span>Cleaners</span></h1><p>Panel Admin • Order Cleaning</p></div><button id="logoutBtn" class="logout">Keluar</button></header>
+    <div id="errorBox" class="error" hidden></div>
+    <section class="stats">
+      <div><b id="totalOrders">0</b><span>Total Order</span></div><div><b id="waitingOrders">0</b><span>Menunggu</span></div>
+      <div><b id="confirmedOrders">0</b><span>Dikonfirmasi</span></div><div><b id="doneOrders">0</b><span>Selesai</span></div>
+    </section>
+    <div class="toolbar"><h2>Pesanan Terbaru</h2><select id="filterStatus"><option value="">Semua Status</option><option>Menunggu</option><option>Dikonfirmasi</option><option>Diproses</option><option>Selesai</option></select></div>
+    <div id="orders"><div class="loading">Menghubungkan ke Firebase...</div></div>
+  </main>
+</div>
+<script type="module" src="admin.js"></script>
+</body></html>
