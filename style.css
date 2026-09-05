@@ -193,6 +193,8 @@ padding-bottom:88px}
   }
 }
 .brand{display:flex;align-items:center;gap:14px}
+.brand img {width: 43px; height: 43px;
+ object-fit: contain; border-radius: 12px;}
 .brand-logo{width:42px;height:42px;
  border-radius:15px;
  background:linear-gradient(145deg,#0f9f48,#38d16b);
